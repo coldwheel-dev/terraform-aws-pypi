@@ -1,0 +1,29 @@
+repos:
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.109.2
+    hooks:
+      - id: terraform_fmt
+      - id: terraform_docs
+        args:
+          # renovate: datasource=github-releases depName=terraform-docs/terraform-docs
+          - --hook-config=--tool-version=0.24.0
+          - --args=--config=.terraform-docs.yml
+        exclude: ^(examples|tests)/
+      - id: terraform_tflint
+        args:
+          # renovate: datasource=github-releases depName=terraform-linters/tflint
+          - --hook-config=--tool-version=0.64.0
+          - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
+      - id: terraform_validate
+        args:
+          # Re-init from scratch when providers/modules changed since the last `terraform init`
+          - --hook-config=--retry-once-with-cleanup=true
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+        exclude: \.md$

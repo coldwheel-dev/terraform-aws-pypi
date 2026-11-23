@@ -1,0 +1,20 @@
+# Terraform files
+**/.terraform/*
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+.terraformrc
+terraform.rc
+*.tfvars
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Local tool binaries
+bin/
+
+# Editors files
+.DS_Store
+.idea
+Thumbs.db
