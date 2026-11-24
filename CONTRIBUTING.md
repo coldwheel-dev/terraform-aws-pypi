@@ -14,11 +14,16 @@ default and description, bump `version` in `main.tf`, and add a line to `## [Unr
 
 ## Releases
 
-Versions follow [SemVer](https://semver.org) with `v`-prefixed tags.
+Versions follow [SemVer](https://semver.org) with `v`-prefixed tags; before `1.0.0`, breaking changes bump the minor version.
 
-1. On a `release/vX.Y.Z` branch, rename `## [Unreleased]` in `CHANGELOG.md` to `## [X.Y.Z] - YYYY-MM-DD`, add a fresh
-   `## [Unreleased]` above it and update the links at the bottom. Open a PR and merge it once CI is green.
-2. Tag the merge commit and push the tag: `git tag -a vX.Y.Z -m "vX.Y.Z" && git push origin vX.Y.Z`.
-3. The `Release` workflow publishes a GitHub Release from the `CHANGELOG.md` section, and the Terraform Registry picks up the tag.
+Two commands. First list everything that goes out under
+`## [Unreleased]` in `CHANGELOG.md` on `main`.
+
+1. `make release VERSION=X.Y.Z` on `main`: makes the `release/vX.Y.Z` branch, turns `## [Unreleased]` into
+   `## [X.Y.Z] - YYYY-MM-DD` with a fresh `## [Unreleased]` above it, updates the compare links at the bottom and
+   `version = "~> X.Y"` in the README snippets, commits, pushes and prints the pull request link. Merge it once CI is green.
+2. `make release-tag`: switches to `main`, pulls the merge and pushes the tag `vX.Y.Z`. The `Release` workflow publishes a
+   GitHub Release with that version's `CHANGELOG.md` section as its notes. The Terraform Registry picks up the new tag
+   automatically.
 
 By contributing you agree that your contributions are licensed under the [Apache 2.0 License](LICENSE).
