@@ -74,7 +74,7 @@ No providers.
 
 | Name | Source | Version |
 | ---- | ------ | ------- |
-| <a name="module_pypi"></a> [pypi](#module\_pypi) | frach/serverless-pypi-index/aws | 0.3.0 |
+| <a name="module_pypi"></a> [pypi](#module\_pypi) | frach/serverless-pypi-index/aws | 0.4.0 |
 
 ## Resources
 
@@ -84,11 +84,11 @@ No resources.
 
 | Name | Description | Type | Default | Required |
 | ---- | ----------- | ---- | ------- | :------: |
-| <a name="input_auth_cache_ttl"></a> [auth\_cache\_ttl](#input\_auth\_cache\_ttl) | Number of seconds the Lambda@Edge function caches credentials in memory before re-reading the secret. Credential changes take up to this long to propagate | `number` | `300` | no |
+| <a name="input_auth_cache_ttl"></a> [auth\_cache\_ttl](#input\_auth\_cache\_ttl) | Number of seconds the Lambda functions cache credentials (read and upload) in memory before re-reading the secret. Credential changes take up to this long to propagate | `number` | `300` | no |
 | <a name="input_auth_credentials"></a> [auth\_credentials](#input\_auth\_credentials) | Map of username => password stored in the Secrets Manager secret. Values end up in Terraform state; leave empty to populate the secret out-of-band as a JSON object of username/password pairs | `map(string)` | `{}` | no |
 | <a name="input_auth_enabled"></a> [auth\_enabled](#input\_auth\_enabled) | Whether to protect the whole index (including package downloads) with HTTP Basic Authentication backed by AWS Secrets Manager | `bool` | `true` | no |
 | <a name="input_auth_realm"></a> [auth\_realm](#input\_auth\_realm) | Realm advertised in the WWW-Authenticate challenge | `string` | `"Private PyPI"` | no |
-| <a name="input_auth_secret_recovery_window_in_days"></a> [auth\_secret\_recovery\_window\_in\_days](#input\_auth\_secret\_recovery\_window\_in\_days) | Number of days Secrets Manager waits before deleting the credentials secret. 0 forces immediate deletion | `number` | `7` | no |
+| <a name="input_auth_secret_recovery_window_in_days"></a> [auth\_secret\_recovery\_window\_in\_days](#input\_auth\_secret\_recovery\_window\_in\_days) | Number of days Secrets Manager waits before deleting a credentials secret (read or upload). 0 forces immediate deletion | `number` | `7` | no |
 | <a name="input_cloudfront_acm_certificate_arn"></a> [cloudfront\_acm\_certificate\_arn](#input\_cloudfront\_acm\_certificate\_arn) | ARN of an ACM certificate in us-east-1 covering every name in cloudfront\_aliases. When null, the default *.cloudfront.net certificate is used | `string` | `null` | no |
 | <a name="input_cloudfront_aliases"></a> [cloudfront\_aliases](#input\_cloudfront\_aliases) | Custom domain names (CNAMEs) for the index, e.g. ["pypi.example.com"]. Requires cloudfront\_acm\_certificate\_arn | `list(string)` | `[]` | no |
 | <a name="input_cloudfront_enabled"></a> [cloudfront\_enabled](#input\_cloudfront\_enabled) | Whether to create CloudFront distribution or not | `bool` | `true` | no |
@@ -126,6 +126,8 @@ No resources.
 | <a name="input_s3_restrict_public_buckets"></a> [s3\_restrict\_public\_buckets](#input\_s3\_restrict\_public\_buckets) | Flag to restrict public buckets | `bool` | `true` | no |
 | <a name="input_s3_versioning"></a> [s3\_versioning](#input\_s3\_versioning) | Versioning configuration for the bucket | <pre>object({<br/>    status     = bool<br/>    mfa_delete = bool<br/>  })</pre> | <pre>{<br/>  "mfa_delete": false,<br/>  "status": true<br/>}</pre> | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | Tags added to every resource that supports them | `map(string)` | `{}` | no |
+| <a name="input_upload_credentials"></a> [upload\_credentials](#input\_upload\_credentials) | Map of username => password allowed to upload, stored in its own Secrets Manager secret (separate from `auth_credentials`). Values end up in Terraform state; leave empty to populate the secret out-of-band as a JSON object of username/password pairs | `map(string)` | `{}` | no |
+| <a name="input_upload_enabled"></a> [upload\_enabled](#input\_upload\_enabled) | Whether to accept uploads from twine, uv publish and poetry publish at <index host>/upload/. Uploads need their own credentials (`upload_credentials`), never overwrite an existing file and invalidate the cached index pages. Files are limited to about 4 MB by the Lambda request size | `bool` | `false` | no |
 | <a name="input_upstream_cooldown_days"></a> [upstream\_cooldown\_days](#input\_upstream\_cooldown\_days) | Hide upstream files uploaded less than this many days ago, so a freshly published (possibly malicious) release can't be installed until it has been public for a while. 0 disables the cooldown. Requires an upstream that serves PEP 691 JSON with PEP 700 upload times (pypi.org does) | `number` | `7` | no |
 | <a name="input_upstream_cooldown_exclude"></a> [upstream\_cooldown\_exclude](#input\_upstream\_cooldown\_exclude) | Upstream package names that skip the cooldown, e.g. your own public packages or ones you need to patch quickly. Names are compared after PEP 503 normalization | `list(string)` | `[]` | no |
 | <a name="input_upstream_enabled"></a> [upstream\_enabled](#input\_upstream\_enabled) | Whether to proxy /simple/<package>/ requests to the upstream index when the package is not hosted in the S3 bucket. Locally hosted packages always take precedence | `bool` | `true` | no |
@@ -145,6 +147,9 @@ No resources.
 | <a name="output_s3_bucket_domain_name"></a> [s3\_bucket\_domain\_name](#output\_s3\_bucket\_domain\_name) | The regional domain name of the S3 bucket |
 | <a name="output_s3_bucket_id"></a> [s3\_bucket\_id](#output\_s3\_bucket\_id) | The name of the S3 bucket |
 | <a name="output_s3_bucket_policy"></a> [s3\_bucket\_policy](#output\_s3\_bucket\_policy) | The bucket policy JSON attached by this module (merged with the optional deny policies for a created bucket) |
+| <a name="output_upload_secret_arn"></a> [upload\_secret\_arn](#output\_upload\_secret\_arn) | The ARN of the Secrets Manager secret holding upload credentials (null when uploads are disabled) |
+| <a name="output_upload_secret_name"></a> [upload\_secret\_name](#output\_upload\_secret\_name) | The name of the Secrets Manager secret holding upload credentials (null when uploads are disabled) |
+| <a name="output_upload_url"></a> [upload\_url](#output\_upload\_url) | The upload URL for twine (--repository-url), uv publish (--publish-url) and poetry (repositories.<name>.url); null when uploads are disabled |
 | <a name="output_uploader_policy_json"></a> [uploader\_policy\_json](#output\_uploader\_policy\_json) | IAM policy JSON for a CI identity that uploads packages and invalidates /simple/* (attach it to e.g. a GitHub Actions OIDC role) |
 <!-- END_TF_DOCS -->
 

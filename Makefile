@@ -31,6 +31,11 @@ TFDOCS          := $(BIN)/terraform-docs
 
 .DEFAULT_GOAL   := help
 
+# End-to-end test account: the maintainers' sandbox. Override for your own, e.g. make e2e E2E_PROFILE=my-sandbox
+E2E_PROFILE     ?= coldwheel-nonprod
+E2E_REGION      ?= eu-central-1
+E2E_ENV         := AWS_PROFILE=$(E2E_PROFILE) AWS_REGION=$(E2E_REGION)
+
 # ==============================================================================
 # Setup
 # ==============================================================================
@@ -52,8 +57,8 @@ install-devops: $(TFLINT) $(TFDOCS) ## Download tflint and terraform-docs into .
 	@$(TFDOCS) --version
 
 .PHONY: install-hooks
-install-hooks: install-python ## Install git pre-commit hooks
-	@echo "==> Installing pre-commit git hooks..."
+install-hooks: install-python ## Install the git pre-commit and pre-push hooks
+	@echo "==> Installing pre-commit and pre-push git hooks..."
 	@$(VENV)/bin/pre-commit install
 
 $(TFLINT):
@@ -102,6 +107,26 @@ validate: ## Run terraform init + validate
 	@terraform init -backend=false -input=false
 	@terraform validate
 
+.PHONY: parity
+parity: $(TFDOCS) ## Check that every input and output of the pinned base module is passed through unchanged
+	@echo "==> Checking parity with the base module..."
+	@terraform init -backend=false -input=false >/dev/null
+	@$(TFDOCS) json --output-file "" . >.terraform/wrapper-docs.json
+	@$(TFDOCS) json --output-file "" .terraform/modules/pypi >.terraform/base-docs.json
+	@python3 scripts/check-base-parity.py .terraform/wrapper-docs.json .terraform/base-docs.json main.tf
+
+.PHONY: e2e
+e2e: ## Deploy to the E2E_PROFILE account, run the base module's e2e suite, destroy (KEEP=1 keeps it up)
+	@$(E2E_ENV) scripts/e2e.sh run
+
+.PHONY: e2e-test
+e2e-test: ## Re-run the suite against a deployment kept with KEEP=1 (PYTEST_ARGS="-k upload" for a part)
+	@$(E2E_ENV) scripts/e2e.sh test
+
+.PHONY: e2e-destroy
+e2e-destroy: ## Remove the e2e deployment (re-run hours later if Lambda@Edge replicas block it)
+	@$(E2E_ENV) scripts/e2e.sh down
+
 .PHONY: tf-test
 tf-test: ## Run Terraform unit tests with mocked providers (Terraform >= 1.7)
 	@echo "==> Running terraform test..."
@@ -144,7 +169,7 @@ release-tag: ## After the release pull request is merged: tag main with its vers
 # ==============================================================================
 
 .PHONY: check
-check: pre-commit validate tf-test ## Run full local CI suite
+check: pre-commit validate tf-test parity ## Run full local CI suite
 
 .PHONY: clean
 clean: ## Remove caches, venv, and downloaded binaries
