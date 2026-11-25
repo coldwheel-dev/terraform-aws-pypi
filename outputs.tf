@@ -52,3 +52,18 @@ output "auth_secret_name" {
   description = "The name of the Secrets Manager secret holding Basic Auth credentials (null when auth is disabled)"
   value       = module.pypi.auth_secret_name
 }
+
+output "upload_url" {
+  description = "The upload URL for twine (--repository-url), uv publish (--publish-url) and poetry (repositories.<name>.url); null when uploads are disabled"
+  value       = module.pypi.upload_url
+}
+
+output "upload_secret_arn" {
+  description = "The ARN of the Secrets Manager secret holding upload credentials (null when uploads are disabled)"
+  value       = module.pypi.upload_secret_arn
+}
+
+output "upload_secret_name" {
+  description = "The name of the Secrets Manager secret holding upload credentials (null when uploads are disabled)"
+  value       = module.pypi.upload_secret_name
+}

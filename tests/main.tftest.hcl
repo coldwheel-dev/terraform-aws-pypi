@@ -27,6 +27,12 @@ mock_provider "aws" {
   mock_resource "aws_secretsmanager_secret" {
     defaults = { arn = "arn:aws:secretsmanager:eu-central-1:123456789012:secret:coldwheel-credentials-abc" }
   }
+  mock_resource "aws_lambda_function_url" {
+    defaults = { function_url = "https://abc123.lambda-url.eu-central-1.on.aws/" }
+  }
+  mock_resource "aws_ssm_parameter" {
+    defaults = { arn = "arn:aws:ssm:eu-central-1:123456789012:parameter/coldwheel/cloudfront-distribution-id" }
+  }
 }
 
 run "defaults" {
@@ -40,6 +46,11 @@ run "defaults" {
   assert {
     condition     = output.auth_secret_arn != null
     error_message = "The credentials secret must be created by default."
+  }
+
+  assert {
+    condition     = output.upload_url == null && output.upload_secret_arn == null
+    error_message = "Uploads must stay off by default."
   }
 }
 
@@ -65,4 +76,18 @@ run "cooldown_must_be_whole_days" {
   }
 
   expect_failures = [var.upstream_cooldown_days]
+}
+
+run "upload_enabled" {
+  command = apply
+
+  variables {
+    upload_enabled     = true
+    upload_credentials = { ci = "upload-secret" }
+  }
+
+  assert {
+    condition     = output.upload_url != null && endswith(output.upload_url, "/upload/") && output.upload_secret_arn != null
+    error_message = "upload_enabled must be passed through and expose the upload URL and secret."
+  }
 }

@@ -1,6 +1,6 @@
 module "pypi" {
   source  = "frach/serverless-pypi-index/aws"
-  version = "0.3.0"
+  version = "0.4.0"
 
   name                                         = var.name
   tags                                         = var.tags
@@ -28,6 +28,8 @@ module "pypi" {
   upstream_index_url                           = var.upstream_index_url
   upstream_cooldown_days                       = var.upstream_cooldown_days
   upstream_cooldown_exclude                    = var.upstream_cooldown_exclude
+  upload_enabled                               = var.upload_enabled
+  upload_credentials                           = var.upload_credentials
   s3_create_bucket                             = var.s3_create_bucket
   s3_bucket_name                               = var.s3_bucket_name
   s3_force_destroy                             = var.s3_force_destroy
