@@ -97,6 +97,10 @@ jobs:
       - name: Run unit tests (mocked providers)
         run: ${{ matrix.tool }} test
 
+      - name: Check parity with the base module
+        if: matrix.tool == 'terraform'
+        run: make parity
+
   security:
     name: Security scan (Trivy)
     runs-on: ubuntu-latest

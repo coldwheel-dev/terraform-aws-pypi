@@ -11,6 +11,10 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 
+# End-to-end test credentials and Lambda build artifacts (scripts/e2e.sh)
+.e2e-password
+builds/
+
 # Local tool binaries
 bin/
 
