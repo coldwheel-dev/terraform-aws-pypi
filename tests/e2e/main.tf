@@ -12,6 +12,8 @@ terraform {
   }
 }
 
+data "aws_caller_identity" "current" {}
+
 provider "aws" {
   default_tags {
     tags = {
@@ -33,6 +35,9 @@ module "pypi" {
   auth_secret_recovery_window_in_days = 0
   cloudfront_ttl_default              = 5
   s3_force_destroy                    = true
+
+  # Fixed name, so the CI role (aws-foundations, github-e2e) can be limited to the e2e buckets
+  s3_bucket_name = "coldwheel-e2e-${data.aws_caller_identity.current.account_id}"
 }
 
 output "index_url" {
