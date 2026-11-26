@@ -28,7 +28,7 @@ provider "aws" {
 
 module "pypi" {
   source  = "coldwheel-dev/pypi/aws"
-  version = "~> 0.1"
+  version = "~> 0.2"
 
   upstream_cooldown_exclude = ["my-public-lib"] # packages that skip the cooldown
 }
